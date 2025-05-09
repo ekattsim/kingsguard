@@ -2,7 +2,7 @@
 #define BATTLE_H
 
 #include <stdbool.h>
-#include "../inc/kingsguard.h" // Need Kingsguard struct
+#include "../inc/kingsguard.h"
 
 // Enum for battle actions
 typedef enum {

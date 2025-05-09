@@ -35,7 +35,6 @@ typedef struct Kingsguard {
     int sp_defense; // Special defense stat
     int speed;   // Determines turn order
 
-    // Moves (copies of Move structs)
     Move moves[4];
     int num_moves;
 

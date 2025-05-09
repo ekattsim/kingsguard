@@ -1,7 +1,7 @@
 #include "../inc/dialogue.h"
 #include <stdio.h>
 #include <string.h>
-#include <strings.h> // For strcasecmp
+#include <strings.h>
 
 // --- Dialogue Storage ---
 // Use keys to identify dialogue blocks. Could be simple strings or more complex structure.

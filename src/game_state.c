@@ -1,37 +1,40 @@
 #include "../inc/game_state.h"
-#include "../inc/locations.h" // Need location definitions and look_around
-#include <stdlib.h> // For NULL
-#include <stdio.h> // For printf
+#include "../inc/locations.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-// Define the global game state instance
 GameState_t game;
 
 void initialize_game_state(void)
 {
-    game.current_state = STATE_THRONE_ROOM; // Start in the throne room
-    game.current_location = LOCATION_THRONE_ROOM; // Set starting location
+    game.current_state = STATE_MAIN_MENU;
+    game.current_location = LOCATION_THRONE_ROOM;
+    game.pre_battle_state = STATE_THRONE_ROOM;
 
-    // Initialize Player Kingsguard ownership
+    strcpy(game.player_name, "Player");
+    strcpy(game.player_gender, "Ruler");
+    game.difficulty = DIFFICULTY_EASY;
+
     game.player_kingsguard.num_kingsguard = 0;
     game.player_kingsguard.has_archer = false;
     game.player_kingsguard.has_lancer = false;
     game.player_kingsguard.has_saber = false;
 
-    // Initialize Plot Flags
-    game.plot_flags.met_initial_kingsguard = false; // Meet them *after* arrival dialogue
+    game.plot_flags.met_initial_kingsguard = false;
     game.plot_flags.heir_battle_fought = false;
     game.plot_flags.has_summoning_artifact = false;
     game.plot_flags.saber_recruited = false;
     game.plot_flags.final_battle_intro_shown = false;
 
 
-    game.active_battle = NULL; // No active battle initially
+    game.active_battle = NULL;
 
     // Story initialization: Player starts with Archer and Lancer *owned*
     // The 'meet' happens shortly after arrival.
     game.player_kingsguard.has_archer = true;
     game.player_kingsguard.has_lancer = true;
-    game.player_kingsguard.num_kingsguard = 2; // Archer and Lancer start with you
+    game.player_kingsguard.num_kingsguard = 2;
 
     // The actual instances used in battle are copied from templates.
     // The flags just indicate *which* templates are available to the player.
@@ -58,14 +61,14 @@ int get_current_location(void)
 void player_go_to_location(int destination_id)
 {
     if (destination_id == LOCATION_UNKNOWN) {
-        printf("You don't know how to get there.\n"); // Should be caught by caller
+        printf("You don't know how to get there.\n");
         return;
     }
 
-    // Check if currently in a state that prevents movement
-    GameState current_state = get_game_state();
-    if (current_state == STATE_BATTLE || current_state == STATE_PUZZLE ||
-        current_state == STATE_GAME_OVER || current_state == STATE_VICTORY)
+    GameState current_state_for_move = get_game_state();
+    if (current_state_for_move == STATE_BATTLE || current_state_for_move == STATE_PUZZLE ||
+        current_state_for_move == STATE_GAME_OVER || current_state_for_move == STATE_VICTORY ||
+        current_state_for_move == STATE_MAIN_MENU)
     {
         printf("You can't go anywhere right now.\n");
         return;
@@ -92,17 +95,30 @@ void player_go_to_location(int destination_id)
         case LOCATION_COLOSSEUM:
             // Can't leave Colosseum once arrived.
             printf("You are at the colosseum, preparing for the final duel. There is no turning back.\n");
-            return; // Prevent movement
+            return;
         default:
-            break; // Should not happen
+            break;
     }
 
     if (can_go) {
         game.current_location = destination_id;
         // We stay in the exploration state (e.g. STATE_THRONE_ROOM -> STATE_COURTYARD is a location change within the same state type)
         // state doesn't necessarily change just by moving UNLESS the new location triggers an event.
+
+        GameState new_exploration_state;
+        switch(destination_id) {
+            case LOCATION_THRONE_ROOM:      new_exploration_state = STATE_THRONE_ROOM;      break;
+            case LOCATION_COURTYARD:        new_exploration_state = STATE_COURTYARD;        break;
+            case LOCATION_SUMMONING_HALL:   new_exploration_state = STATE_SUMMONING_HALL;   break;
+            case LOCATION_COLOSSEUM:        new_exploration_state = STATE_COLOSSEUM;        break;
+            default:
+                printf("Error: Unknown location ID %d encountered when setting game state.\n", destination_id);
+                return;
+        }
+        set_game_state(new_exploration_state);
+
         printf("You go to the %s.\n", location_names[destination_id]);
-        look_around(); // Print description and potentially trigger events upon arrival
+        look_around();
     } else {
         printf("You cannot go to the %s from here.\n", location_names[destination_id]);
     }
